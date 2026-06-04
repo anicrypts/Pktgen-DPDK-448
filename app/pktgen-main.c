@@ -465,6 +465,7 @@ main(int argc, char **argv)
 	argc -= ret;
 	argv += ret;
 
+
 	/* Configure pktgen data which will be encapsulated in the mbuf. */
 	pktgen_dynfield_offset =
 		rte_mbuf_dynfield_register(&pktgen_dynfield_desc);

@@ -432,8 +432,10 @@ pktgen_clr_port_flags(port_info_t *info, uint32_t flags) {
 static __inline__ int
 pktgen_tst_port_flags(port_info_t *info, uint32_t flags)
 {
-	if (rte_atomic32_read(&info->port_flags) & flags)
+	if (rte_atomic32_read(&info->port_flags) & flags) {
+
 		return 1;
+	}
 	return 0;
 }
 
@@ -534,7 +536,7 @@ do_command(const char *cmd, int (*display)(char *, int)) {
 		i = display(line, i);
 
 	if (f)
-		fclose(f);
+		pclose(f);
 	if (line)
 		free(line);
 

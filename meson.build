@@ -30,6 +30,7 @@ add_project_arguments('-D_GNU_SOURCE', language: 'c')
 
 # enable extra warnings and disable any unwanted warnings
 warning_flags = [
+        '-Wno-error-use-after-free',
 	'-Wno-pedantic',
 	'-Wno-format-truncation',
 ]

@@ -359,6 +359,10 @@ gb_move_gap_to_point(struct gapbuf *gb)
  * @return
  *   N/A
  */
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+
 static inline void
 gb_expand_buf(struct gapbuf *gb, uint32_t more)
 {
@@ -371,12 +375,14 @@ gb_expand_buf(struct gapbuf *gb, uint32_t more)
 		if (gb->buf == NULL)
 			rte_panic("realloc(%d) in %s failed\n", more, __func__);
 
-		gb->point   += (gb->buf - old);
+	 	gb->point   += (gb->buf - old);
 		gb->ebuf    += (gb->buf - old);
 		gb->gap     += (gb->buf - old);
 		gb->egap    += (gb->buf - old);
 	}
 }
+
+#pragma GCC diagnostic pop
 
 /**
  * Expand the Gap by the size given.

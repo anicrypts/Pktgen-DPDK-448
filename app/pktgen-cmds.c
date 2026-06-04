@@ -22,10 +22,12 @@
 #if __RTE_VERSION >= RTE_VERSION_NUM(17, 2, 0, 0)
 #include <rte_net.h>
 #endif
+/*
 #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
 #include <rte_eth_bond.h>
 #include <rte_eth_bond_8023ad.h>
 #endif
+*/
 
 static char hash_line[] = "#######################################################################";
 #define _cp(s) (strcmp(str, s) == 0)
@@ -1505,7 +1507,7 @@ pktgen_start_latency_sampler(port_info_t *info)
         return;
     }
 
-    if (info->latsamp_rate == 0 || info->latsamp_outfile == NULL ||
+    if (info->latsamp_rate == 0 /* || info->latsamp_outfile == NULL*/ ||
         info->latsamp_type == LATSAMPLER_UNSPEC || info->latsamp_num_samples == 0) {
         pktgen_log_error("Set proper sampling type, number, rate and outfile!");
         return;
@@ -1855,7 +1857,9 @@ enable_capture(port_info_t *info, uint32_t state)
     pktgen_set_capture(info, state);
 }
 
+/*
 #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+*/
 /**
  *
  * enable_bonding - Enable or disable bonding TX zero packet processing.
@@ -1867,7 +1871,7 @@ enable_capture(port_info_t *info, uint32_t state)
  *
  * SEE ALSO:
  */
-
+/*
 void
 enable_bonding(port_info_t *info, uint32_t state)
 {
@@ -1936,7 +1940,7 @@ show_bonding_mode(port_info_t *info)
     int i;
     uint16_t port_id = info->pid;
 
-    /* Display the bonding mode.*/
+    // Display the bonding mode.
     bonding_mode = rte_eth_bond_mode_get(port_id);
     if (bonding_mode < 0) {
         printf("Failed to get bonding mode for port = %d\n", port_id);
@@ -2039,6 +2043,7 @@ show_bonding_mode(port_info_t *info)
         printf("\tPrimary: [%d]\n", primary_id);
 }
 #endif
+*/
 
 /**
  *

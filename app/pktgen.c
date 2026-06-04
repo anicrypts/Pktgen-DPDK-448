@@ -39,6 +39,24 @@
 
 /* Allocated the pktgen structure for global use */
 pktgen_t pktgen;
+#define MAX_INDEX 10000000
+uint64_t timestamps[MAX_INDEX];
+size_t send_empty_rxs[MAX_INDEX];
+size_t recv_empty_rxs[MAX_INDEX];
+size_t send_rx_burst_counts[MAX_INDEX];
+size_t send_tx_burst_counts[MAX_INDEX];
+size_t recv_rx_burst_counts[MAX_INDEX];
+size_t recv_tx_burst_counts[MAX_INDEX];
+uint64_t end_begin_timestamps[MAX_INDEX];
+uint64_t end_timestamps[MAX_INDEX];
+double cycles[MAX_INDEX];
+size_t empty_rxs = 0;
+size_t curr_index = 0;
+size_t start_index = 0;
+size_t lid_index = 0;
+size_t end_curr_index = 0;
+size_t tx_burst_count = 0;
+size_t rx_burst_count = 0;
 
 double
 next_poisson_time(double rateParameter)
@@ -244,25 +262,51 @@ static inline void
 pktgen_tstamp_apply(port_info_t *info __rte_unused, struct rte_mbuf **mbufs, int cnt,
                     int32_t seq_idx)
 {
+
+    return;
+    if (unlikely(cnt == 0)) {
+	return;
+    }
+    int lid = rte_lcore_id();
+    if (lid != 3) {
+	return;
+    }
     pkt_seq_t *pkt           = &info->seq_pkt[seq_idx];
     struct pg_ether_hdr *eth = (struct pg_ether_hdr *)&pkt->hdr.eth;
     char *l3_hdr             = (char *)&eth[1]; /* Point to l3 hdr location */
-    int i;
+    //int i;
 
-    for (i = 0; i < cnt; i++) {
+    uint64_t now = rte_rdtsc_precise(); 
+
+    //printf("Executing pktgen_tstamp_apply\n");    
+    //for (i = 0; i < cnt; i++) {
         tstamp_t *tstamp;
 
-        tstamp = pktgen_tstamp_pointer(info, mbufs[i], seq_idx);
+        tstamp = pktgen_tstamp_pointer(info, mbufs[0], seq_idx);
 
-        tstamp->timestamp = rte_rdtsc_precise();
+        tstamp->timestamp = now;
         tstamp->magic     = TSTAMP_MAGIC;
+
+        if (start_index < MAX_INDEX){
+	    timestamps[start_index] = tstamp->timestamp;
+	    send_rx_burst_counts[start_index] = rx_burst_count;
+	    send_tx_burst_counts[start_index] = tx_burst_count;
+	    send_empty_rxs[start_index] = empty_rxs; 
+	    start_index += 1;
+	}
 
         /* Construct the UDP header */
         pktgen_udp_hdr_ctor(pkt, l3_hdr, PG_ETHER_TYPE_IPv4);
 
         /* IPv4 Header constructor */
         pktgen_ipv4_ctor(pkt, l3_hdr);
-    }
+
+
+	/*if (i % 4 == 0) {
+	printf("Sending out packet\n");
+	rte_pktmbuf_dump(stdout, mbufs[i], 1400);
+	}*/
+   // }
 }
 
 static inline void
@@ -295,7 +339,9 @@ pktgen_send_burst(port_info_t *info, uint16_t qid)
     struct mbuf_table *mtab = &info->q[qid].tx_mbufs;
     struct rte_mbuf **pkts;
     struct qstats_s *qstats = &info->qstats[qid];
-    uint32_t ret, cnt, tap, rnd, tstamp, i;
+    uint32_t ret, cnt, tap, i;
+    //uint32_t rnd;
+    //uint32_t tstamp;
     int32_t seq_idx;
 
     tap = pktgen_tst_port_flags(info, PROCESS_TX_TAP_PKTS);
@@ -313,24 +359,34 @@ pktgen_send_burst(port_info_t *info, uint16_t qid)
     else
         seq_idx = SINGLE_PKT;
 
-    rnd = pktgen_tst_port_flags(info, SEND_RANDOM_PKTS);
-    tstamp =
-        pktgen_tst_port_flags(info, (SEND_LATENCY_PKTS | SEND_RATE_PACKETS | SAMPLING_LATENCIES));
+    //rnd = pktgen_tst_port_flags(info, SEND_RANDOM_PKTS);
+    //tstamp =
+    //    pktgen_tst_port_flags(info, (SEND_LATENCY_PKTS | SEND_RATE_PACKETS | SAMPLING_LATENCIES));
 
+
+    //printf("Tstamp flags %d\n", tstamp);
     qstats->txpkts += cnt;
-    for (i = 0; i < cnt; i++)
+    for (i = 0; i < cnt; i++) {
         qstats->txbytes += rte_pktmbuf_data_len(pkts[i]);
+	/*if (i == 0) {
+	    printf("Before tstamp apply\n");
+	    rte_pktmbuf_dump(stdout, pkts[i], 1024);
+        }*/
+    }
 
     /* Send all of the packets before we can exit this function */
     while (cnt) {
-        if (rnd)
+        /*if (rnd)
             pktgen_rnd_bits_apply(info, pkts, cnt, NULL);
-
-        if (tstamp)
+	*/
+     //   if (tstamp) {
             pktgen_tstamp_apply(info, pkts, cnt, seq_idx);
-
+	    
+	    //printf("After tstamp apply\n");
+	    //rte_pktmbuf_dump(stdout, pkts[0], 1024);
+//	}
         ret = rte_eth_tx_burst(info->pid, qid, pkts, cnt);
-
+        tx_burst_count += 1;
         if (tap)
             pktgen_do_tx_tap(info, pkts, ret);
 
@@ -370,10 +426,16 @@ special_send:
 static __inline__ void
 pktgen_recv_tstamp(port_info_t *info, struct rte_mbuf **pkts, uint16_t nb_pkts)
 {
+ 
+    int lid = rte_lcore_id();
+
+    if (lid != 3) {
+	return;
+    }
     uint32_t flags;
     int32_t seq_idx;
-    int lid = rte_lcore_id();
-    int qid = get_rxque(pktgen.l2p, lid, info->pid);
+
+    //int qid = get_rxque(pktgen.l2p, lid, info->pid);
     int i;
     uint64_t lat, jitter;
 
@@ -386,17 +448,42 @@ pktgen_recv_tstamp(port_info_t *info, struct rte_mbuf **pkts, uint16_t nb_pkts)
     else
         seq_idx = SINGLE_PKT;
 
+    uint64_t now = rte_rdtsc_precise();
     for (i = 0; i < nb_pkts; i++) {
 
-        if (flags & (SEND_LATENCY_PKTS | SEND_RATE_PACKETS | SAMPLING_LATENCIES)) {
+        if (flags & (SEND_PCAP_PKTS | SEND_LATENCY_PKTS | SEND_RATE_PACKETS | SAMPLING_LATENCIES)) {
             tstamp_t *tstamp;
             tstamp = pktgen_tstamp_pointer(info, pkts[i], seq_idx);
+            /*if (tstamp->magic == TSTAMP_MAGIC) {
+		printf("TSTAMP_MAGIC is a match\n");
+	    } 
+	    else {
+		rte_pktmbuf_dump(stdout, pkts[i], 1400);    
+		printf("TSTAMP MAGIC is not a match\n");
+	    }*/
+	    
+	    
+	    
+	    if (tstamp->magic == TSTAMP_MAGIC) {
+                lat = (now - tstamp->timestamp);
 
-            if (tstamp->magic == TSTAMP_MAGIC) {
-                lat = (rte_rdtsc_precise() - tstamp->timestamp);
 
-                if (flags & (SEND_LATENCY_PKTS | SEND_RATE_PACKETS)) {
-                    info->avg_latency += lat;
+                if (flags & (SEND_PCAP_PKTS | SEND_LATENCY_PKTS | SEND_RATE_PACKETS)) {
+                    //rte_pktmbuf_dump(stdout, pkts[i], 1400);
+		    info->avg_latency += lat;
+		    if (curr_index < MAX_INDEX) {
+			end_begin_timestamps[curr_index] = tstamp->timestamp;
+		        end_timestamps[curr_index] = now;
+			cycles[curr_index] = lat;
+			recv_rx_burst_counts[curr_index] = rx_burst_count;
+			recv_tx_burst_counts[curr_index] = tx_burst_count;
+			recv_empty_rxs[curr_index] = empty_rxs;
+			/*if (curr_index % 4  == 0) {
+			    rte_pktmbuf_dump(stdout, pkts[i], 1400);
+			    printf("Start_ts %lx end_ts %lx cycles %ld lat %f\n", end_begin_timestamps[curr_index], end_timestamps[curr_index], lat, lat/ 2800.0);
+			}*/
+			curr_index += 1;
+		    }
                     if (lat > info->prev_latency)
                         jitter = lat - info->prev_latency;
                     else
@@ -406,8 +493,8 @@ pktgen_recv_tstamp(port_info_t *info, struct rte_mbuf **pkts, uint16_t nb_pkts)
                     if (jitter > info->jitter_threshold_clks)
                         info->jitter_count++;
                     info->prev_latency = lat;
-                } else if (flags & (SAMPLING_LATENCIES)) {
-                    /* Record latency if it's time for sampling (seperately per lcore) */
+                } /*else if (flags & (SAMPLING_LATENCIES)) {
+                    // Record latency if it's time for sampling (seperately per lcore) 
                     latsamp_stats_t *stats = &info->latsamp_stats[qid];
                     uint64_t now           = rte_rdtsc_precise();
                     stats->pkt_counter++;
@@ -416,11 +503,11 @@ pktgen_recv_tstamp(port_info_t *info, struct rte_mbuf **pkts, uint16_t nb_pkts)
                             // stats->data[stats->idx] = lat;
                             stats->data[stats->idx] =
                                 lat * 1000000000 /
-                                rte_get_tsc_hz(); /* Do we want to keep it as cycles? */
+                                rte_get_tsc_hz(); // Do we want to keep it as cycles? 
                             stats->idx++;
                         }
 
-                        /* Calculate next sampling point TODO: Use poisson */
+                        // Calculate next sampling point TODO: Use poisson 
                         if (info->latsamp_type == LATSAMPLER_POISSON) {
                             // TODO: Write poisson
                             double next_possion_time_ns = next_poisson_time(info->latsamp_rate);
@@ -436,7 +523,7 @@ pktgen_recv_tstamp(port_info_t *info, struct rte_mbuf **pkts, uint16_t nb_pkts)
                             // count based
                         }
                     }
-                }
+                } */
 
             } else
                 info->magic_errors++;
@@ -487,6 +574,21 @@ static __inline__ void
 pktgen_exit_cleanup(uint8_t lid)
 {
     uint8_t idx;
+
+    FILE *fptr;
+    fptr = fopen("filename.txt", "w");
+    /*fprintf(fptr, "start_ts send_rx_burst send_tx_burst send_empty_rxs recv_rx_burst recv_tx_burst recv_empty_rxs end_start_ts end_ts cycles lat\n");
+    for (size_t idx = 0; idx < curr_index; idx++) {
+        fprintf(fptr, "%lx %ld %ld %ld %ld %ld %ld %lx %lx %f %f\n", timestamps[idx], send_rx_burst_counts[idx], send_tx_burst_counts[idx], send_empty_rxs[idx], recv_rx_burst_counts[idx],  recv_tx_burst_counts[idx], recv_empty_rxs[idx],  end_begin_timestamps[idx], end_timestamps[idx], cycles[idx], cycles[idx]/ 2800);
+    }*/
+    fprintf(fptr, "lat");
+    for (size_t idx = 0; idx < curr_index; idx++) { 
+	fprintf(fptr, "%f\n", cycles[idx]/ 2800);
+    }
+	
+
+    fclose(fptr);
+
 
     for (idx = 0; idx < get_lcore_txcnt(pktgen.l2p, lid); idx++) {
         port_info_t *info;
@@ -1180,10 +1282,13 @@ pktgen_main_receive(port_info_t *info, uint8_t lid, struct rte_mbuf *pkts_burst[
     /*
      * Read packet from RX queues and free the mbufs
      */
-    if ((nb_rx = rte_eth_rx_burst(pid, qid, pkts_burst, nb_pkts)) == 0)
-        return;
+    if ((nb_rx = rte_eth_rx_burst(pid, qid, pkts_burst, nb_pkts)) == 0) {
+        empty_rxs += 1; 
+	return;
+    }
 
     qstats->rxpkts += nb_rx;
+    rx_burst_count += 1;
     for (i = 0; i < nb_rx; i++)
         qstats->rxbytes += rte_pktmbuf_data_len(pkts_burst[i]);
 

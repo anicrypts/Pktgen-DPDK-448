@@ -2466,7 +2466,7 @@ pktgen_capture(lua_State *L)
 	return 0;
 }
 
-#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+//#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
 /**
  *
  * pktgen_bonding - Enable or Disable bonding to send zero packets
@@ -2478,7 +2478,7 @@ pktgen_capture(lua_State *L)
  *
  * SEE ALSO:
  */
-
+/*
 static int
 pktgen_bonding(lua_State *L)
 {
@@ -2498,6 +2498,7 @@ pktgen_bonding(lua_State *L)
 	return 0;
 }
 #endif
+*/
 
 /**
  *
@@ -3802,9 +3803,10 @@ static const luaL_Reg pktgenlib[] = {
 	{"port",          pktgen_port},			/* select a different port number used for sequence and range pages. */
 	{"process",       pktgen_process},		/* Enable or disable input packet processing on a port */
 	{"capture",       pktgen_capture},		/* Enable or disable capture on a port */
-#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
-	{"bonding",       pktgen_bonding},		/* Enable or disable bonding on a port */
-#endif
+//#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+//	{"bonding",       pktgen_bonding},		
+//	 Enable or disable bonding on a port
+//#endif
 	{"garp",          pktgen_garp},			/* Enable or disable GARP packet processing on a port */
 	{"blink",         pktgen_blink},		/* Blink an led on a port */
 	{"help",          pktgen_help},			/* Return the help text */
