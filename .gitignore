@@ -19,3 +19,6 @@ lib/lua/build
 Builddir/
 builddir/
 usr/local
+
+pcaps-448
+pcaps-imix
