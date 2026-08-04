@@ -22,3 +22,6 @@ usr/local
 
 pcaps-448
 pcaps-imix
+pcaps-big
+pcaps-small
+pcaps/*
