@@ -19,3 +19,5 @@ lib/lua/build
 Builddir/
 builddir/
 usr/local
+
+pcaps/*

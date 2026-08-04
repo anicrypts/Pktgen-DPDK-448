@@ -2476,7 +2476,7 @@ pktgen_capture(lua_State *L)
     return 0;
 }
 
-#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+// #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
 /**
  *
  * pktgen_bonding - Enable or Disable bonding to send zero packets
@@ -2488,7 +2488,7 @@ pktgen_capture(lua_State *L)
  *
  * SEE ALSO:
  */
-
+/*
 static int
 pktgen_bonding(lua_State *L)
 {
@@ -2508,6 +2508,7 @@ pktgen_bonding(lua_State *L)
     return 0;
 }
 #endif
+*/
 
 /**
  *
@@ -3191,6 +3192,7 @@ port_info(lua_State *L, port_info_t *info)
     lua_rawset(L, -3);
 
     rte_eth_dev_info_get(info->pid, &dev);
+    /*
     const struct rte_bus *bus = NULL;
     if (dev.device)
         bus = rte_bus_find_by_device(dev.device);
@@ -3204,7 +3206,8 @@ port_info(lua_State *L, port_info_t *info)
         rte_eth_dev_get_name_by_port(info->pid, name);
         snprintf(buff, sizeof(buff), "%d/%s:%s/%s", rte_dev_numa_node(dev.device), vend, device, rte_dev_name(dev.device));
     } else
-        snprintf(buff, sizeof(buff), "%04x:%04x/%02x:%02d.%d", 0, 0, 0, 0, 0);
+    */
+    snprintf(buff, sizeof(buff), "%04x:%04x/%02x:%02d.%d", 0, 0, 0, 0, 0);
     setf_string(L, "pci_vendor", buff);
 
     /*------------------------------------*/
@@ -3757,9 +3760,9 @@ static const luaL_Reg pktgenlib[] = {
     {"port", pktgen_port}, /* select a different port number used for sequence and range pages. */
     {"process", pktgen_process}, /* Enable or disable input packet processing on a port */
     {"capture", pktgen_capture}, /* Enable or disable capture on a port */
-#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
-    {"bonding", pktgen_bonding}, /* Enable or disable bonding on a port */
-#endif
+// #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+//     {"bonding", pktgen_bonding}, /* Enable or disable bonding on a port */
+// #endif
     {"blink", pktgen_blink},       /* Blink an led on a port */
     {"help", pktgen_help},         /* Return the help text */
     {"Lua.help", pktgen_lua_help}, /* Lua command help text */

@@ -20,10 +20,10 @@
 #include <pg_delay.h>
 
 #include <rte_net.h>
-#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
-#include <rte_eth_bond.h>
-#include <rte_eth_bond_8023ad.h>
-#endif
+// #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+// #include <rte_eth_bond.h>
+// #include <rte_eth_bond_8023ad.h>
+// #endif
 
 static char hash_line[] = "#######################################################################";
 #define _cp(s) (strcmp(str, s) == 0)
@@ -1920,7 +1920,7 @@ enable_capture(port_info_t *info, uint32_t state)
     pktgen_set_capture(info, state);
 }
 
-#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+// #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
 /**
  *
  * enable_bonding - Enable or disable bonding TX zero packet processing.
@@ -1932,7 +1932,7 @@ enable_capture(port_info_t *info, uint32_t state)
  *
  * SEE ALSO:
  */
-
+/*
 void
 enable_bonding(port_info_t *info, uint32_t state)
 {
@@ -2001,7 +2001,7 @@ show_bonding_mode(port_info_t *info)
     int i;
     uint16_t port_id = info->pid;
 
-    /* Display the bonding mode.*/
+    // Display the bonding mode.
     bonding_mode = rte_eth_bond_mode_get(port_id);
     if (bonding_mode < 0) {
         printf("Failed to get bonding mode for port = %d\n", port_id);
@@ -2104,6 +2104,7 @@ show_bonding_mode(port_info_t *info)
         printf("\tPrimary: [%d]\n", primary_id);
 }
 #endif
+*/
 
 /**
  *

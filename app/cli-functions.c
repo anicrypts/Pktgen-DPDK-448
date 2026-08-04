@@ -41,10 +41,10 @@
 #include "pktgen-random.h"
 #include "pktgen-log.h"
 #include "pg_ether.h"
-#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
-#include <rte_eth_bond.h>
-#include <rte_eth_bond_8023ad.h>
-#endif
+// #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+// #include <rte_eth_bond.h>
+// #include <rte_eth_bond_8023ad.h>
+// #endif
 
 static inline uint16_t
 valid_pkt_size(char *val)
@@ -1074,9 +1074,9 @@ en_dis_cmd(int argc, char **argv)
             foreach_port(portlist, pktgen_set_capture(info, state));
             break;
         case 15:
-#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
-            foreach_port(portlist, enable_bonding(info, state));
-#endif
+// #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+//             foreach_port(portlist, enable_bonding(info, state));
+// #endif
             break;
         case 16:
             foreach_port(portlist, enable_vxlan(info, state));
@@ -1839,7 +1839,7 @@ plugin_cmd(int argc, char **argv)
     }
     return 0;
 }
-
+/*
 #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
 // clang-format off
 static struct cli_map bonding_map[] = {
@@ -1899,6 +1899,7 @@ bonding_cmd(int argc, char **argv)
     return 0;
 }
 #endif
+*/
 
 #define rate_types      \
     "count|"   /*  0 */ \
@@ -2159,9 +2160,9 @@ static struct cli_tree default_tree[] = {
     c_cmd("set", set_cmd, "set a number of options"),
     c_cmd("dbg", dbg_cmd, "debug commands"),
     c_cmd("plugin", plugin_cmd, "Plugin a shared object file"),
-#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
-    c_cmd("bonding", bonding_cmd, "Bonding commands"),
-#endif
+// #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+//     c_cmd("bonding", bonding_cmd, "Bonding commands"),
+// #endif
     c_cmd("rate", rate_cmd, "Rate setup commands"),
 
     c_alias("on", "enable screen", "Enable screen updates"),
@@ -2193,9 +2194,9 @@ init_tree(void)
     cli_help_add("Theme", theme_map, theme_help);
     cli_help_add("Plugin", plugin_map, plugin_help);
     cli_help_add("Rate", rate_map, rate_help);
-#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
-    cli_help_add("Bonding", bonding_map, bonding_help);
-#endif
+// #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+//     cli_help_add("Bonding", bonding_map, bonding_help);
+// #endif
     cli_help_add("Status", NULL, status_help);
 
     /* Make sure the pktgen commands are executable in search path */

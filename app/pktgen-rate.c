@@ -258,6 +258,7 @@ rate_print_static_data(void)
                     inet_mtoa(buff, sizeof(buff), &pkt->eth_src_addr));
         rte_eth_dev_info_get(pid, &dev);
         pktgen_display_set_color("stats.mac");
+        /*
         const struct rte_bus *bus = NULL;
         if (dev.device)
             bus = rte_bus_find_by_device(dev.device);
@@ -271,7 +272,8 @@ rate_print_static_data(void)
             rte_eth_dev_get_name_by_port(pid, name);
             snprintf(buff, sizeof(buff), "%d/%s:%s/%s", rte_dev_numa_node(dev.device), vend, device, rte_dev_name(dev.device));
         } else
-            snprintf(buff, sizeof(buff), "-1/0000:0000/00:00.0");
+        */
+        snprintf(buff, sizeof(buff), "-1/0000:0000/00:00.0");
         pktgen_display_set_color("stats.bdf");
         scrn_printf(row++, col, "%*s", COLUMN_WIDTH_1, buff);
         display_cnt++;
