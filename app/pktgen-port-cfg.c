@@ -18,9 +18,9 @@
 
 #include <link.h>
 
-#if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
-#include <rte_eth_bond_8023ad.h>
-#endif
+// #if defined(RTE_LIBRTE_PMD_BOND) || defined(RTE_NET_BOND)
+// #include <rte_eth_bond_8023ad.h>
+// #endif
 #include <rte_bus_pci.h>
 #include <rte_bus.h>
 
@@ -167,22 +167,22 @@ pktgen_config_ports(void)
         rte_eth_dev_info_get(i, &dev);
 
         buff[0]                   = 0;
-        const struct rte_bus *bus = NULL;
-        if (dev.device)
-            bus = rte_bus_find_by_device(dev.device);
-        if (bus && !strcmp(rte_bus_name(bus), "pci")) {
-            char name[RTE_ETH_NAME_MAX_LEN];
-            char vend[8], device[8];
+        // const struct rte_bus *bus = NULL;
+        // if (dev.device)
+        //     bus = rte_bus_find_by_device(dev.device);
+        // if (bus && !strcmp(rte_bus_name(bus), "pci")) {
+        //     char name[RTE_ETH_NAME_MAX_LEN];
+        //     char vend[8], device[8];
 
-            printf("   %2d: %-12s   %2d     %2d   ", i, dev.driver_name, dev.if_index,
-                   rte_dev_numa_node(dev.device));
-            vend[0] = device[0] = '\0';
-            sscanf(rte_dev_bus_info(dev.device), "vendor_id=%4s, device_id=%4s", vend, device);
+        //     printf("   %2d: %-12s   %2d     %2d   ", i, dev.driver_name, dev.if_index,
+        //            rte_dev_numa_node(dev.device));
+        //     vend[0] = device[0] = '\0';
+        //     sscanf(rte_dev_bus_info(dev.device), "vendor_id=%4s, device_id=%4s", vend, device);
 
-            rte_eth_dev_get_name_by_port(i, name);
-            snprintf(buff, sizeof(buff), "%s:%s/%s", vend, device, rte_dev_name(dev.device));
-        } else
-            snprintf(buff, sizeof(buff), "-1/0000:0000/00:00.0");
+        //     rte_eth_dev_get_name_by_port(i, name);
+        //     snprintf(buff, sizeof(buff), "%s:%s/%s", vend, device, rte_dev_name(dev.device));
+        // } else
+        snprintf(buff, sizeof(buff), "-1/0000:0000/00:00.0");
         printf("%s\n", buff);
     }
     printf("\n");
@@ -248,7 +248,7 @@ pktgen_config_ports(void)
         info->seq_pkt = rte_zmalloc_socket(buff, (sizeof(pkt_seq_t) * NUM_TOTAL_PKTS),
                                            RTE_CACHE_LINE_SIZE, rte_socket_id());
         if (info->seq_pkt == NULL)
-            pktgen_log_panic("Unable to allocate %d pkt_seq_t headers", NUM_TOTAL_PKTS);
+            pktgen_log_panic("Unable to allocate %ld pkt_seq_t headers", NUM_TOTAL_PKTS);
 
         for (int i = 0; i < NUM_TOTAL_PKTS; i++) {
             info->seq_pkt[i].seq_enabled = 1;

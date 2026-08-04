@@ -202,21 +202,21 @@ pktgen_print_static_data(void)
 
         rte_eth_dev_info_get(pid, &dev);
 
-        const struct rte_bus *bus = NULL;
-        if (dev.device)
-            bus = rte_bus_find_by_device(dev.device);
-        if (bus && !strcmp(rte_bus_name(bus), "pci")) {
-            char name[RTE_ETH_NAME_MAX_LEN];
-            char vend[8], device[8];
+        // const struct rte_bus *bus = NULL;
+        // if (dev.device)
+        //     bus = rte_bus_find_by_device(dev.device);
+        // if (bus && !strcmp(rte_bus_name(bus), "pci")) {
+        //     char name[RTE_ETH_NAME_MAX_LEN];
+        //     char vend[8], device[8];
 
-            vend[0] = device[0] = '\0';
-            sscanf(rte_dev_bus_info(dev.device), "vendor_id=%4s, device_id=%4s", vend, device);
+        //     vend[0] = device[0] = '\0';
+        //     sscanf(rte_dev_bus_info(dev.device), "vendor_id=%4s, device_id=%4s", vend, device);
 
-            rte_eth_dev_get_name_by_port(pid, name);
-            snprintf(buff, sizeof(buff), "%d/%s:%s/%s", rte_dev_numa_node(dev.device), vend, device,
-                     rte_dev_name(dev.device));
-        } else
-            snprintf(buff, sizeof(buff), "-1/0000:0000/00:00.0");
+        //     rte_eth_dev_get_name_by_port(pid, name);
+        //     snprintf(buff, sizeof(buff), "%d/%s:%s/%s", rte_dev_numa_node(dev.device), vend, device,
+        //              rte_dev_name(dev.device));
+        // } else
+        snprintf(buff, sizeof(buff), "-1/0000:0000/00:00.0");
         pktgen_display_set_color("stats.bdf");
         scrn_printf(row++, col, "%*s", COLUMN_WIDTH_1, buff);
         display_cnt++;

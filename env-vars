@@ -1,0 +1,4 @@
+export C_INCLUDE_PATH=/home/anikajh/benchmark-tools/dpdk-stable-21.11.9/build/include
+export CPLUS_INCLUDE_PATH=/home/anikajh/benchmark-tools/dpdk-stable-21.11.9/build/include
+export PKG_CONFIG_PATH=/usr/bin/:/home/anikajh/benchmark-tools/dpdk-stable-21.11.9/build/lib/x86_64-linux-gnu/pkgconfig:/opt/mellanox/collectx/lib/x86_64-linux-gnu/pkgconfig:/opt/mellanox/flexio/lib/pkgconfig:/opt/mellanox/dpdk/lib/x86_64-linux-gnu/pkgconfig:/opt/mellanox/collectx/lib/x86_64-linux-gnu/pkgconfig:/opt/mellanox/flexio/lib/pkgconfig:/opt/mellanox/dpdk/lib/x86_64-linux-gnu/pkgconfig
+ 
