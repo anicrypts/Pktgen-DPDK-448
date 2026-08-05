@@ -199,7 +199,7 @@ pktgen_parse_args(int argc, char **argv)
 	pktgen.mbuf_buf_size = RTE_MBUF_DEFAULT_BUF_SIZE;
 
 	pktgen.verbose = 0;
-	while ((opt = getopt_long(argc, argvopt, "p:m:f:l:s:g:hPNGTvjtr",
+	while ((opt = getopt_long(argc, argvopt, "o:p:m:f:l:s:g:hPNGTvjtr",
 				  lgopts, &option_index)) != EOF)
 		switch (opt) {
 		case 't':
@@ -232,6 +232,10 @@ pktgen_parse_args(int argc, char **argv)
 
 		case 'l':	/* Log file */
 			pktgen_log_set_file(optarg);
+			break;
+		
+		case 'o': /* File to write statistics to. */
+			set_stats_file(optarg);
 			break;
 
 		case 'm':	/* Matrix for port mapping. */

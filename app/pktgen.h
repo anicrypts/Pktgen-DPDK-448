@@ -409,6 +409,8 @@ typedef struct {
 
 #define TSTAMP_MAGIC   (('T' << 8) + 's')
 
+void set_stats_file(const char* filepath);
+
 static __inline__ void
 pktgen_set_port_flags(port_info_t *info, uint32_t flags) {
 	uint32_t val;

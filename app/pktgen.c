@@ -58,6 +58,21 @@ size_t end_curr_index = 0;
 size_t tx_burst_count = 0;
 size_t rx_burst_count = 0;
 
+#define LATENCY_SAMPLE_PACKET_STRIDE 200000
+#define MAX_LATENCY_SAMPLES 1000
+uint64_t avg_latency_samples[MAX_LATENCY_SAMPLES];
+size_t pkts_recv = 0;
+size_t latency_cur_idx = 0;
+
+char *stats_file = NULL;
+
+void
+set_stats_file(const char *filepath)
+{
+    stats_file = strdup(filepath);
+    return;
+}
+
 double
 next_poisson_time(double rateParameter)
 {
@@ -425,7 +440,7 @@ special_send:
 static __inline__ void
 pktgen_recv_tstamp(port_info_t *info, struct rte_mbuf **pkts, uint16_t nb_pkts)
 {
- 
+    pkts_recv += 1;
     // int lid = rte_lcore_id();
 
     // if (lid != 3) {
@@ -453,36 +468,32 @@ pktgen_recv_tstamp(port_info_t *info, struct rte_mbuf **pkts, uint16_t nb_pkts)
         if (flags & (SEND_PCAP_PKTS | SEND_LATENCY_PKTS | SEND_RATE_PACKETS | SAMPLING_LATENCIES)) {
             tstamp_t *tstamp;
             tstamp = pktgen_tstamp_pointer(info, pkts[i], seq_idx);
-            /*if (tstamp->magic == TSTAMP_MAGIC) {
-		printf("TSTAMP_MAGIC is a match\n");
-	    } 
-	    else {
-		rte_pktmbuf_dump(stdout, pkts[i], 1400);    
-		printf("TSTAMP MAGIC is not a match\n");
-	    }*/
 	    
-	    
-	    
-	    if (tstamp->magic == TSTAMP_MAGIC) {
+	        if (tstamp->magic == TSTAMP_MAGIC) {
                 lat = (now - tstamp->timestamp);
-
 
                 if (flags & (SEND_PCAP_PKTS | SEND_LATENCY_PKTS | SEND_RATE_PACKETS)) {
                     //rte_pktmbuf_dump(stdout, pkts[i], 1400);
-		    info->avg_latency += lat;
-		    if (curr_index < MAX_INDEX) {
-			end_begin_timestamps[curr_index] = tstamp->timestamp;
-		        end_timestamps[curr_index] = now;
-			cycles[curr_index] = lat;
-			recv_rx_burst_counts[curr_index] = rx_burst_count;
-			recv_tx_burst_counts[curr_index] = tx_burst_count;
-			recv_empty_rxs[curr_index] = empty_rxs;
-			/*if (curr_index % 4  == 0) {
-			    rte_pktmbuf_dump(stdout, pkts[i], 1400);
-			    printf("Start_ts %lx end_ts %lx cycles %ld lat %f\n", end_begin_timestamps[curr_index], end_timestamps[curr_index], lat, lat/ 2800.0);
-			}*/
-			curr_index += 1;
-		    }
+		            info->avg_latency += lat;
+                    if (latency_cur_idx < MAX_LATENCY_SAMPLES && (pkts_recv % LATENCY_SAMPLE_PACKET_STRIDE == 0)) {
+                        avg_latency_samples[latency_cur_idx] = ((info->avg_latency / info->latency_nb_pkts) * 1000000) / rte_get_tsc_hz();
+                        latency_cur_idx += 1;
+                    }
+
+		            if (curr_index < MAX_INDEX) {
+			            end_begin_timestamps[curr_index] = tstamp->timestamp;
+		                end_timestamps[curr_index] = now;
+			            cycles[curr_index] = lat;
+			            recv_rx_burst_counts[curr_index] = rx_burst_count;
+			            recv_tx_burst_counts[curr_index] = tx_burst_count;
+			            recv_empty_rxs[curr_index] = empty_rxs;
+			            /*if (curr_index % 4  == 0) {
+			                rte_pktmbuf_dump(stdout, pkts[i], 1400);
+			                printf("Start_ts %lx end_ts %lx cycles %ld lat %f\n", end_begin_timestamps[curr_index], end_timestamps[curr_index], lat, lat/ 2800.0);
+			            }*/
+			            curr_index += 1;
+		            }
+
                     if (lat > info->prev_latency)
                         jitter = lat - info->prev_latency;
                     else
@@ -574,19 +585,27 @@ pktgen_exit_cleanup(uint8_t lid)
 {
     uint8_t idx;
 
-    FILE *fptr;
-    fptr = fopen("filename.txt", "w");
-    /*fprintf(fptr, "start_ts send_rx_burst send_tx_burst send_empty_rxs recv_rx_burst recv_tx_burst recv_empty_rxs end_start_ts end_ts cycles lat\n");
-    for (size_t idx = 0; idx < curr_index; idx++) {
-        fprintf(fptr, "%lx %ld %ld %ld %ld %ld %ld %lx %lx %f %f\n", timestamps[idx], send_rx_burst_counts[idx], send_tx_burst_counts[idx], send_empty_rxs[idx], recv_rx_burst_counts[idx],  recv_tx_burst_counts[idx], recv_empty_rxs[idx],  end_begin_timestamps[idx], end_timestamps[idx], cycles[idx], cycles[idx]/ 2800);
-    }*/
-    fprintf(fptr, "lat");
-    for (size_t idx = 0; idx < curr_index; idx++) { 
-	fprintf(fptr, "%f\n", cycles[idx]/ 2800);
-    }
-	
+    if (stats_file != NULL) {
+        FILE *fptr;
+        fptr = fopen(stats_file, "w");
+        /*fprintf(fptr, "start_ts send_rx_burst send_tx_burst send_empty_rxs recv_rx_burst recv_tx_burst recv_empty_rxs end_start_ts end_ts cycles lat\n");
+        for (size_t idx = 0; idx < curr_index; idx++) {
+            fprintf(fptr, "%lx %ld %ld %ld %ld %ld %ld %lx %lx %f %f\n", timestamps[idx], send_rx_burst_counts[idx], send_tx_burst_counts[idx], send_empty_rxs[idx], recv_rx_burst_counts[idx],  recv_tx_burst_counts[idx], recv_empty_rxs[idx],  end_begin_timestamps[idx], end_timestamps[idx], cycles[idx], cycles[idx]/ 2800);
+        }*/
+        // fprintf(fptr, "lat");
+        // for (size_t idx = 0; idx < curr_index; idx++) { 
+	    // fprintf(fptr, "%f\n", cycles[idx]/ 2800);
+        // }
 
-    fclose(fptr);
+        fprintf(fptr, "Packet Number, Latency\n");
+        for (size_t idx = 0; idx < latency_cur_idx; idx++) {
+            fprintf(fptr, "%ld, %ld\n", (idx + 1) * LATENCY_SAMPLE_PACKET_STRIDE,
+                avg_latency_samples[idx]);
+        }
+
+        fclose(fptr);
+        free(stats_file);
+    }
 
 
     for (idx = 0; idx < get_lcore_txcnt(pktgen.l2p, lid); idx++) {
