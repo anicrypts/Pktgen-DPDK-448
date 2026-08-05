@@ -263,23 +263,22 @@ pktgen_tstamp_apply(port_info_t *info __rte_unused, struct rte_mbuf **mbufs, int
                     int32_t seq_idx)
 {
 
-    return;
     if (unlikely(cnt == 0)) {
 	return;
     }
-    int lid = rte_lcore_id();
-    if (lid != 3) {
-	return;
-    }
+    // int lid = rte_lcore_id();
+    // if (lid != 3) {
+	// return;
+    // }
     pkt_seq_t *pkt           = &info->seq_pkt[seq_idx];
     struct pg_ether_hdr *eth = (struct pg_ether_hdr *)&pkt->hdr.eth;
     char *l3_hdr             = (char *)&eth[1]; /* Point to l3 hdr location */
-    //int i;
+    int i;
 
     uint64_t now = rte_rdtsc_precise(); 
 
-    //printf("Executing pktgen_tstamp_apply\n");    
-    //for (i = 0; i < cnt; i++) {
+    // printf("Executing pktgen_tstamp_apply\n");    
+    for (i = 0; i < cnt; i++) {
         tstamp_t *tstamp;
 
         tstamp = pktgen_tstamp_pointer(info, mbufs[0], seq_idx);
@@ -306,7 +305,7 @@ pktgen_tstamp_apply(port_info_t *info __rte_unused, struct rte_mbuf **mbufs, int
 	printf("Sending out packet\n");
 	rte_pktmbuf_dump(stdout, mbufs[i], 1400);
 	}*/
-   // }
+   }
 }
 
 static inline void
@@ -340,8 +339,8 @@ pktgen_send_burst(port_info_t *info, uint16_t qid)
     struct rte_mbuf **pkts;
     struct qstats_s *qstats = &info->qstats[qid];
     uint32_t ret, cnt, tap, i;
-    //uint32_t rnd;
-    //uint32_t tstamp;
+    uint32_t rnd;
+    uint32_t tstamp;
     int32_t seq_idx;
 
     tap = pktgen_tst_port_flags(info, PROCESS_TX_TAP_PKTS);
@@ -359,12 +358,12 @@ pktgen_send_burst(port_info_t *info, uint16_t qid)
     else
         seq_idx = SINGLE_PKT;
 
-    //rnd = pktgen_tst_port_flags(info, SEND_RANDOM_PKTS);
-    //tstamp =
-    //    pktgen_tst_port_flags(info, (SEND_LATENCY_PKTS | SEND_RATE_PACKETS | SAMPLING_LATENCIES));
+    rnd = pktgen_tst_port_flags(info, SEND_RANDOM_PKTS);
+    tstamp =
+       pktgen_tst_port_flags(info, (SEND_LATENCY_PKTS | SEND_RATE_PACKETS | SAMPLING_LATENCIES));
 
 
-    //printf("Tstamp flags %d\n", tstamp);
+    // printf("Tstamp flags %d\n", tstamp);
     qstats->txpkts += cnt;
     for (i = 0; i < cnt; i++) {
         qstats->txbytes += rte_pktmbuf_data_len(pkts[i]);
@@ -376,15 +375,15 @@ pktgen_send_burst(port_info_t *info, uint16_t qid)
 
     /* Send all of the packets before we can exit this function */
     while (cnt) {
-        /*if (rnd)
+        if (rnd)
             pktgen_rnd_bits_apply(info, pkts, cnt, NULL);
-	*/
-     //   if (tstamp) {
+	
+       if (tstamp) {
             pktgen_tstamp_apply(info, pkts, cnt, seq_idx);
 	    
 	    //printf("After tstamp apply\n");
 	    //rte_pktmbuf_dump(stdout, pkts[0], 1024);
-//	}
+	}
         ret = rte_eth_tx_burst(info->pid, qid, pkts, cnt);
         tx_burst_count += 1;
         if (tap)
@@ -427,15 +426,15 @@ static __inline__ void
 pktgen_recv_tstamp(port_info_t *info, struct rte_mbuf **pkts, uint16_t nb_pkts)
 {
  
-    int lid = rte_lcore_id();
+    // int lid = rte_lcore_id();
 
-    if (lid != 3) {
-	return;
-    }
+    // if (lid != 3) {
+	// return;
+    // }
     uint32_t flags;
     int32_t seq_idx;
 
-    //int qid = get_rxque(pktgen.l2p, lid, info->pid);
+    // int qid = get_rxque(pktgen.l2p, lid, info->pid);
     int i;
     uint64_t lat, jitter;
 

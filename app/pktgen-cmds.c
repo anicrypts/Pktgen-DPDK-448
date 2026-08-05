@@ -3696,7 +3696,7 @@ void
 enable_latency(port_info_t *info, uint32_t state)
 {
     if (state == ENABLE_STATE) {
-        pktgen_clr_port_flags(info, EXCLUSIVE_MODES);
+        // pktgen_clr_port_flags(info, EXCLUSIVE_MODES);
         pktgen_set_port_flags(info, SEND_LATENCY_PKTS);
 
         if (info->seq_pkt[SINGLE_PKT].pktSize <
