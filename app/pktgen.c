@@ -58,13 +58,13 @@ size_t end_curr_index = 0;
 size_t tx_burst_count = 0;
 size_t rx_burst_count = 0;
 
-#define LATENCY_SAMPLE_PACKET_STRIDE 200000
-#define MAX_LATENCY_SAMPLES 1000
-uint64_t avg_latency_samples[MAX_LATENCY_SAMPLES];
-uint64_t tx_throughput_samples[MAX_LATENCY_SAMPLES]; // Output throughput, in mbits
-uint64_t rx_throughput_samples[MAX_LATENCY_SAMPLES]; // Input throughput, in mbits
+#define STATS_SAMPLE_PACKET_STRIDE 200000
+#define MAX_STATS_SAMPLES 1000
+uint64_t avg_latency_samples[MAX_STATS_SAMPLES];
+uint64_t tx_throughput_samples[MAX_STATS_SAMPLES]; // Output throughput, in mbits
+uint64_t rx_throughput_samples[MAX_STATS_SAMPLES]; // Input throughput, in mbits
 size_t pkts_recv = 0;
-size_t latency_cur_idx = 0;
+size_t stats_cur_idx = 0;
 
 char *stats_file = NULL;
 
@@ -477,11 +477,11 @@ pktgen_recv_tstamp(port_info_t *info, struct rte_mbuf **pkts, uint16_t nb_pkts)
                 if (flags & (SEND_PCAP_PKTS | SEND_LATENCY_PKTS | SEND_RATE_PACKETS)) {
                     //rte_pktmbuf_dump(stdout, pkts[i], 1400);
 		            info->avg_latency += lat;
-                    if (latency_cur_idx < MAX_LATENCY_SAMPLES && (pkts_recv % LATENCY_SAMPLE_PACKET_STRIDE == 0)) {
-                        avg_latency_samples[latency_cur_idx] = ((info->avg_latency / info->latency_nb_pkts) * 1000000) / rte_get_tsc_hz();
-                        tx_throughput_samples[latency_cur_idx] = oBitsTotal(info->curr_stats) / Million;
-                        rx_throughput_samples[latency_cur_idx] = iBitsTotal(info->curr_stats) / Million;
-                        latency_cur_idx += 1;
+                    if (stats_cur_idx < MAX_STATS_SAMPLES && (pkts_recv % STATS_SAMPLE_PACKET_STRIDE == 0)) {
+                        avg_latency_samples[stats_cur_idx] = ((info->avg_latency / info->latency_nb_pkts) * 1000000) / rte_get_tsc_hz();
+                        tx_throughput_samples[stats_cur_idx] = oBitsTotal(info->curr_stats) / Million;
+                        rx_throughput_samples[stats_cur_idx] = iBitsTotal(info->curr_stats) / Million;
+                        stats_cur_idx += 1;
                     }
 
 		            if (curr_index < MAX_INDEX) {
@@ -602,8 +602,8 @@ pktgen_exit_cleanup(uint8_t lid)
         // }
 
         fprintf(fptr, "Packet Number, Latency (us), Tx Throughput (MBit/s), Rx Throughput (Mbit/s)\n");
-        for (size_t idx = 0; idx < latency_cur_idx; idx++) {
-            fprintf(fptr, "%ld, %ld, %ld, %ld\n", (idx + 1) * LATENCY_SAMPLE_PACKET_STRIDE,
+        for (size_t idx = 0; idx < stats_cur_idx; idx++) {
+            fprintf(fptr, "%ld, %ld, %ld, %ld\n", (idx + 1) * STATS_SAMPLE_PACKET_STRIDE,
                 avg_latency_samples[idx], tx_throughput_samples[idx], rx_throughput_samples[idx]);
         }
 
