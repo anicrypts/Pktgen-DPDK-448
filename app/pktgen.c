@@ -479,8 +479,8 @@ pktgen_recv_tstamp(port_info_t *info, struct rte_mbuf **pkts, uint16_t nb_pkts)
 		            info->avg_latency += lat;
                     if (stats_cur_idx < MAX_STATS_SAMPLES && (pkts_recv % STATS_SAMPLE_PACKET_STRIDE == 0)) {
                         avg_latency_samples[stats_cur_idx] = ((info->avg_latency / info->latency_nb_pkts) * 1000000) / rte_get_tsc_hz();
-                        tx_throughput_samples[stats_cur_idx] = oBitsTotal(info->curr_stats) / Million;
-                        rx_throughput_samples[stats_cur_idx] = iBitsTotal(info->curr_stats) / Million;
+                        tx_throughput_samples[stats_cur_idx] = oBitsTotal(info->rate_stats) / Million;
+                        rx_throughput_samples[stats_cur_idx] = iBitsTotal(info->rate_stats) / Million;
                         stats_cur_idx += 1;
                     }
 
@@ -601,9 +601,9 @@ pktgen_exit_cleanup(uint8_t lid)
 	    // fprintf(fptr, "%f\n", cycles[idx]/ 2800);
         // }
 
-        fprintf(fptr, "Packet Number, Latency (us), Tx Throughput (MBit/s), Rx Throughput (Mbit/s)\n");
+        fprintf(fptr, "Packet Number, Latency (us), Tx Throughput (Mbit/s), Rx Throughput (Mbit/s)\n");
         for (size_t idx = 0; idx < stats_cur_idx; idx++) {
-            fprintf(fptr, "%ld, %ld, %ld, %ld\n", (idx + 1) * STATS_SAMPLE_PACKET_STRIDE,
+            fprintf(fptr, "%ld, %lu, %lu, %lu\n", (idx + 1) * STATS_SAMPLE_PACKET_STRIDE,
                 avg_latency_samples[idx], tx_throughput_samples[idx], rx_throughput_samples[idx]);
         }
 
