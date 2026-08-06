@@ -58,7 +58,7 @@ size_t end_curr_index = 0;
 size_t tx_burst_count = 0;
 size_t rx_burst_count = 0;
 
-#define STATS_SAMPLE_PACKET_STRIDE 200000
+#define STATS_SAMPLE_PACKET_STRIDE 100000
 #define MAX_STATS_SAMPLES 1000
 uint64_t avg_latency_samples[MAX_STATS_SAMPLES];
 uint64_t tx_throughput_samples[MAX_STATS_SAMPLES]; // Output throughput, in mbits
@@ -66,12 +66,21 @@ uint64_t rx_throughput_samples[MAX_STATS_SAMPLES]; // Input throughput, in mbits
 size_t pkts_recv = 0;
 size_t stats_cur_idx = 0;
 
-char *stats_file = NULL;
+char *sampling_stats_file = NULL;
+char *sum_stats_file = NULL;
+const int STATS_PID = 0; // Stats code only works on one port!
 
 void
-set_stats_file(const char *filepath)
+set_sampling_stats_file(const char *filepath)
 {
-    stats_file = strdup(filepath);
+    sampling_stats_file = strdup(filepath);
+    return;
+}
+
+void
+set_sum_stats_file(const char *filepath)
+{
+    sum_stats_file = strdup(filepath);
     return;
 }
 
@@ -588,27 +597,49 @@ static __inline__ void
 pktgen_exit_cleanup(uint8_t lid)
 {
     uint8_t idx;
+    FILE *fptr;
+    port_info_t *info;
+    size_t i;
+    uint64_t latencies_sum = 0, tx_throughput_sum = 0, rx_throughput_sum = 0;
+    uint64_t avg_latency, avg_tx_throughput, avg_rx_throughput;
 
-    if (stats_file != NULL) {
-        FILE *fptr;
-        fptr = fopen(stats_file, "w");
-        /*fprintf(fptr, "start_ts send_rx_burst send_tx_burst send_empty_rxs recv_rx_burst recv_tx_burst recv_empty_rxs end_start_ts end_ts cycles lat\n");
-        for (size_t idx = 0; idx < curr_index; idx++) {
-            fprintf(fptr, "%lx %ld %ld %ld %ld %ld %ld %lx %lx %f %f\n", timestamps[idx], send_rx_burst_counts[idx], send_tx_burst_counts[idx], send_empty_rxs[idx], recv_rx_burst_counts[idx],  recv_tx_burst_counts[idx], recv_empty_rxs[idx],  end_begin_timestamps[idx], end_timestamps[idx], cycles[idx], cycles[idx]/ 2800);
-        }*/
-        // fprintf(fptr, "lat");
-        // for (size_t idx = 0; idx < curr_index; idx++) { 
-	    // fprintf(fptr, "%f\n", cycles[idx]/ 2800);
-        // }
-
+    if (sampling_stats_file != NULL) {
+        fptr = fopen(sampling_stats_file, "w");
         fprintf(fptr, "Packet Number, Latency (us), Tx Throughput (Mbit/s), Rx Throughput (Mbit/s)\n");
-        for (size_t idx = 0; idx < stats_cur_idx; idx++) {
-            fprintf(fptr, "%ld, %lu, %lu, %lu\n", (idx + 1) * STATS_SAMPLE_PACKET_STRIDE,
-                avg_latency_samples[idx], tx_throughput_samples[idx], rx_throughput_samples[idx]);
+        for (i = 0; i < stats_cur_idx; i++) {
+            fprintf(fptr, "%ld, %lu, %lu, %lu\n", (i + 1) * STATS_SAMPLE_PACKET_STRIDE, avg_latency_samples[i],
+                tx_throughput_samples[i], rx_throughput_samples[i]);
         }
-
         fclose(fptr);
-        free(stats_file);
+        free(sampling_stats_file);
+    }
+
+    if (sum_stats_file != NULL) {
+        for (i = 0; i < stats_cur_idx; i++) {
+            latencies_sum += avg_latency_samples[i];
+            tx_throughput_sum += tx_throughput_samples[i];
+            rx_throughput_sum += rx_throughput_samples[i];
+        }
+        avg_latency = latencies_sum / stats_cur_idx;
+        avg_tx_throughput = tx_throughput_sum / stats_cur_idx;
+        avg_rx_throughput = rx_throughput_sum / stats_cur_idx;
+        info = &pktgen.info[STATS_PID];
+        fptr = fopen(sum_stats_file, "w");
+        fprintf(fptr, "ipackets=%lu\n", info->curr_stats.ipackets);
+        fprintf(fptr, "opackets=%lu\n", info->curr_stats.opackets);
+        fprintf(fptr, "ibytes=%lu\n", info->curr_stats.ibytes);
+        fprintf(fptr, "obytes=%lu\n", info->curr_stats.obytes);
+        fprintf(fptr, "imissed=%lu\n", info->curr_stats.imissed);
+        fprintf(fptr, "ierrors=%lu\n", info->curr_stats.ierrors);
+        fprintf(fptr, "oerrors=%lu\n", info->curr_stats.oerrors);
+        fprintf(fptr, "rx_nombuf=%lu\n", info->curr_stats.rx_nombuf);
+        fprintf(fptr, "avg_latency=%lu\n", avg_latency);
+        fprintf(fptr, "jitter_percent=%lu\n", (info->jitter_count * 100) / info->curr_stats.ipackets);
+        fprintf(fptr, "max_latency=%lu\n", (info->max_latency * 1000000) / rte_get_tsc_hz());
+        fprintf(fptr, "avg_tx_throughput=%lu\n", avg_tx_throughput);
+        fprintf(fptr, "avg_rx_throughput=%lu\n", avg_rx_throughput);
+        fclose(fptr);
+        free(sum_stats_file);
     }
 
 
