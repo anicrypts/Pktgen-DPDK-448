@@ -33,7 +33,10 @@ pktgen.sleep(1);
 
 printf("starting traffic\n");
 pktgen.start(0);
-pktgen.sleep(4);
+pktgen.delay(200);
+pktgen.page("latency");
+pktgen.sleep(20);
+pktgen.quit();
 
 prints("portStats", pktgen.portStats(0, "port"));
 pktgen.sleep(5);
