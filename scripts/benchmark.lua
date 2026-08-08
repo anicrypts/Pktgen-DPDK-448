@@ -5,6 +5,7 @@ pktgen.clr();
 pktgen.delay(100);
 
 pktgen.set(0, "rate", 100);
+pktgen.jitter(0, 20); 
 pktgen.latency(0, "enable");
 pktgen.delay(200);
 
