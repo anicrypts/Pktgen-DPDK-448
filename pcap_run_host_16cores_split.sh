@@ -1,0 +1,1 @@
+sudo -E taskset -c 16-31  build/app/pktgen -l 16-31 -n 16 -a e2:00.0 -- -v -m "[17-23:24-31].0" -s 0:pcaps/pcaps-small/256_1000_0.pcap -f scripts/20s-benchmark.lua -o plswork_sample.txt -u plswork_sum.txt
