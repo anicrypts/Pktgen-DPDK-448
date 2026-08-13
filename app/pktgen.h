@@ -411,6 +411,7 @@ typedef struct {
 
 void set_sampling_stats_file(const char* filepath);
 void set_sum_stats_file(const char* filepath);
+void set_pkt_tx_threshold(const char *threshold);
 
 static __inline__ void
 pktgen_set_port_flags(port_info_t *info, uint32_t flags) {

@@ -58,7 +58,7 @@ size_t end_curr_index = 0;
 size_t tx_burst_count = 0;
 size_t rx_burst_count = 0;
 
-#define STATS_SAMPLE_PACKET_STRIDE 100000
+#define STATS_SAMPLE_PACKET_STRIDE 10000
 #define MAX_STATS_SAMPLES 1000
 uint64_t avg_latency_samples[MAX_STATS_SAMPLES];
 uint64_t tx_throughput_samples[MAX_STATS_SAMPLES]; // Output throughput, in mbits
@@ -68,7 +68,13 @@ size_t stats_cur_idx = 0;
 
 char *sampling_stats_file = NULL;
 char *sum_stats_file = NULL;
-const int STATS_PID = 0; // Stats code only works on one port!
+const int STATS_PID = 0; // Stats and threshold code only works on one port!
+
+/* Threshold code: stop sending packets and write stats when the threshold is reached.
+ * Does not quit pktgen when the threshold is reached.
+ */
+uint64_t pkt_tx_threshold = -1; // When to stop sending packets
+int threshold_enabled = 0;
 
 void
 set_sampling_stats_file(const char *filepath)
@@ -82,6 +88,20 @@ set_sum_stats_file(const char *filepath)
 {
     sum_stats_file = strdup(filepath);
     return;
+}
+
+void
+set_pkt_tx_threshold(const char *threshold)
+{
+    pkt_tx_threshold = atol(threshold) * 1000000;
+    threshold_enabled = 1;
+    pktgen_log_info("pkt_tx_threshold set to %lu\n", pkt_tx_threshold);
+    return;
+}
+
+inline int under_threshold()
+{
+    return threshold_enabled && (pktgen.info[STATS_PID].curr_stats.opackets < pkt_tx_threshold);
 }
 
 double
@@ -605,7 +625,7 @@ pktgen_exit_cleanup(uint8_t lid)
 
     if (sampling_stats_file != NULL) {
         fptr = fopen(sampling_stats_file, "w");
-        fprintf(fptr, "Packet Number, Latency (us), Tx Throughput (Mbit/s), Rx Throughput (Mbit/s)\n");
+        fprintf(fptr, "Burst Number, Latency (us), Tx Throughput (Mbit/s), Rx Throughput (Mbit/s)\n");
         for (i = 0; i < stats_cur_idx; i++) {
             fprintf(fptr, "%ld, %lu, %lu, %lu\n", (i + 1) * STATS_SAMPLE_PACKET_STRIDE, avg_latency_samples[i],
                 tx_throughput_samples[i], rx_throughput_samples[i]);
@@ -1471,7 +1491,8 @@ pktgen_main_rxtx_loop(uint8_t lid)
                 "*** port %u on socket ID %u has different socket ID on lcore %u socket ID %d\n",
                 pid, rte_eth_dev_socket_id(pid), rte_lcore_id(), rte_socket_id());
     }
-    while (pg_lcore_is_running(pktgen.l2p, lid)) {
+    while (pg_lcore_is_running(pktgen.l2p, lid) && under_threshold()) {
+
         for (idx = 0; idx < rxcnt; idx++) /* Read Packets */
             pktgen_main_receive(infos[idx], lid, pkts_burst, DEFAULT_PKT_BURST);
 
@@ -1500,7 +1521,7 @@ pktgen_main_rxtx_loop(uint8_t lid)
         }
     }
 
-    pktgen_log_debug("Exit %d", lid);
+    pktgen_log_info("Exit %d", lid);
 
     pktgen_exit_cleanup(lid);
 }
