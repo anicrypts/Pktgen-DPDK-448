@@ -101,7 +101,7 @@ set_pkt_tx_threshold(const char *threshold)
 
 inline int under_threshold()
 {
-    return threshold_enabled && (pktgen.info[STATS_PID].curr_stats.opackets < pkt_tx_threshold);
+    return threshold_enabled ? (pktgen.info[STATS_PID].curr_stats.opackets < pkt_tx_threshold) : 1;
 }
 
 double
